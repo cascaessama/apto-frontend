@@ -13,6 +13,7 @@ function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [reforcoDropdownOpen, setReforcoDropdownOpen] = useState(false);
+  const [cursoDropdownOpen, setCursoDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('login');
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
   const [loadingAvaliacoes, setLoadingAvaliacoes] = useState(false);
@@ -23,8 +24,14 @@ function App() {
   const [showFormCurso, setShowFormCurso] = useState(false);
   const [formCurso, setFormCurso] = useState({ nome: '', descricao: '', idCursoReforco: '' });
   const [editandoCurso, setEditandoCurso] = useState<any>(null);
+  const [avaliacoesProfessor, setAvaliacoesProfessor] = useState<any[]>([]);
+  const [loadingAvaliacoesProfessor, setLoadingAvaliacoesProfessor] = useState(false);
+  const [showFormAvaliacao, setShowFormAvaliacao] = useState(false);
+  const [formAvaliacao, setFormAvaliacao] = useState({ nome: '', descricao: '', idCurso: '', dataAvaliacao: '' });
+  const [editandoAvaliacao, setEditandoAvaliacao] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const reforcoDropdownRef = useRef<HTMLDivElement>(null);
+  const cursoDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,6 +199,9 @@ function App() {
       if (reforcoDropdownRef.current && !reforcoDropdownRef.current.contains(event.target as Node)) {
         setReforcoDropdownOpen(false);
       }
+      if (cursoDropdownRef.current && !cursoDropdownRef.current.contains(event.target as Node)) {
+        setCursoDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -202,6 +212,13 @@ function App() {
   useEffect(() => {
     if (currentPage === 'professor-cursos' && usuario && token) {
       fetchCursos();
+    }
+  }, [currentPage, usuario, token]);
+
+  // Carregar avaliações quando a página é aberta
+  useEffect(() => {
+    if (currentPage === 'professor-avaliacoes' && usuario && token) {
+      fetchAvaliacoesProfessor();
     }
   }, [currentPage, usuario, token]);
 
@@ -313,6 +330,118 @@ function App() {
       }, 1500);
     } catch (err) {
       setError('Erro ao deletar curso');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAvaliacoesProfessor = async () => {
+    setLoadingAvaliacoesProfessor(true);
+    try {
+      const response = await fetch('/api/avaliacoes', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 404) {
+          setAvaliacoesProfessor([]);
+        } else {
+          setError(errorData.erro || 'Erro ao buscar avaliações');
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setAvaliacoesProfessor(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao buscar avaliações');
+    } finally {
+      setLoadingAvaliacoesProfessor(false);
+    }
+  };
+
+  const handleSalvarAvaliacao = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formAvaliacao.nome || !formAvaliacao.descricao || !formAvaliacao.idCurso || !formAvaliacao.dataAvaliacao) {
+      setError('Nome, descrição, curso e data são obrigatórios');
+      return;
+    }
+
+    if (formAvaliacao.descricao.length > 500) {
+      setError('Descrição não pode exceder 500 caracteres');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const method = editandoAvaliacao ? 'PUT' : 'POST';
+      const endpoint = editandoAvaliacao ? `/api/avaliacoes/${editandoAvaliacao._id}` : '/api/avaliacoes';
+      
+      const body = {
+        nome: formAvaliacao.nome,
+        descricao: formAvaliacao.descricao,
+        idCurso: formAvaliacao.idCurso,
+        dataAvaliacao: formAvaliacao.dataAvaliacao
+      };
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.erro || 'Erro ao salvar avaliação');
+        return;
+      }
+
+      setSuccess(editandoAvaliacao ? 'Avaliação atualizada com sucesso!' : 'Avaliação criada com sucesso!');
+      setFormAvaliacao({ nome: '', descricao: '', idCurso: '', dataAvaliacao: '' });
+      setEditandoAvaliacao(null);
+      setError('');
+      
+      setTimeout(() => {
+        setSuccess('');
+        fetchAvaliacoesProfessor();
+      }, 1500);
+    } catch (err) {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletarAvaliacao = async (id: string) => {
+    if (!confirm('Tem certeza que deseja deletar esta avaliação?')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/avaliacoes/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao deletar avaliação');
+        return;
+      }
+
+      setSuccess('Avaliação deletada com sucesso!');
+      setError('');
+      setTimeout(() => {
+        setSuccess('');
+        fetchAvaliacoesProfessor();
+      }, 1500);
+    } catch (err) {
+      setError('Erro ao deletar avaliação');
     } finally {
       setLoading(false);
     }
@@ -578,6 +707,7 @@ function App() {
                 {currentPage === 'avaliacoes-reforco' && 'AVALIAÇÕES PARA REFORÇO'}
                 {currentPage === 'todas-avaliacoes' && 'TODAS AS AVALIAÇÕES'}
                 {currentPage === 'professor-cursos' && 'CURSOS'}
+                {currentPage === 'professor-avaliacoes' && 'AVALIAÇÕES'}
               </span>
             </div>
             <button onClick={handleLogout} className="header-logout">Sair</button>
@@ -931,12 +1061,195 @@ function App() {
               /* Gerenciar Avaliações */
               <div className="avaliacoes-container">
                 <div className="page-header">
-                  <h1 className="page-title">Gerenciar Avaliações</h1>
+                  <div>
+                    <h1 className="page-title">📝 Gerenciar Avaliações</h1>
+                    <p className="page-subtitle">Crie, edite e organize suas avaliações</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (!showFormAvaliacao) {
+                        fetchAvaliacoesProfessor();
+                      }
+                      setShowFormAvaliacao(!showFormAvaliacao);
+                      if (editandoAvaliacao) {
+                        setEditandoAvaliacao(null);
+                        setFormAvaliacao({ nome: '', descricao: '', idCurso: '', dataAvaliacao: '' });
+                      }
+                    }}
+                    className="add-button"
+                  >
+                    {showFormAvaliacao ? '✕ Cancelar' : '✚ Nova Avaliação'}
+                  </button>
                 </div>
-                <div className="empty-state-card">
-                  <div className="empty-icon">📝</div>
-                  <p>Funcionalidade em desenvolvimento...</p>
-                </div>
+
+                {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
+
+                {showFormAvaliacao && (
+                  <form onSubmit={handleSalvarAvaliacao} className="form-container">
+                    <h2 className="form-title">{editandoAvaliacao ? 'Editar Avaliação' : 'Nova Avaliação'}</h2>
+                    <div className="form-group">
+                      <label htmlFor="nome-avaliacao">Nome da Avaliação *</label>
+                      <input
+                        id="nome-avaliacao"
+                        type="text"
+                        placeholder="Ex: Prova 1º Bimestre"
+                        value={formAvaliacao.nome}
+                        onChange={(e) => setFormAvaliacao({ ...formAvaliacao, nome: e.target.value })}
+                        className="form-input"
+                        disabled={loadingAvaliacoesProfessor}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="descricao-avaliacao">Descrição *</label>
+                      <textarea
+                        id="descricao-avaliacao"
+                        placeholder="Descrição clara da avaliação (máx. 500 caracteres)"
+                        value={formAvaliacao.descricao}
+                        onChange={(e) => setFormAvaliacao({
+                          ...formAvaliacao,
+                          descricao: e.target.value.substring(0, 500)
+                        })}
+                        className="form-textarea"
+                        disabled={loadingAvaliacoesProfessor}
+                        maxLength={500}
+                        rows={4}
+                        required
+                      />
+                      <div className="char-count">{formAvaliacao.descricao.length}/500 caracteres</div>
+                    </div>
+
+                    <div className="form-group" ref={cursoDropdownRef}>
+                      <label htmlFor="curso-avaliacao">Curso *</label>
+                      <div className="custom-select">
+                        <button
+                          type="button"
+                          className="custom-select-button"
+                          onClick={() => setCursoDropdownOpen(!cursoDropdownOpen)}
+                          id="curso-avaliacao"
+                        >
+                          <span>
+                            {formAvaliacao.idCurso 
+                              ? cursos.find((c: any) => c._id === formAvaliacao.idCurso)?.nome 
+                              : 'Selecione um curso'}
+                          </span>
+                          <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </button>
+                        {cursoDropdownOpen && (
+                          <div className="custom-select-options">
+                            {cursos.length === 0 ? (
+                              <div className="custom-select-option" style={{ color: '#999' }}>
+                                Nenhum curso disponível
+                              </div>
+                            ) : (
+                              cursos.map((curso: any) => (
+                                <button
+                                  key={curso._id}
+                                  type="button"
+                                  className={`custom-select-option ${formAvaliacao.idCurso === curso._id ? 'active' : ''}`}
+                                  onClick={() => {
+                                    setFormAvaliacao({ ...formAvaliacao, idCurso: curso._id });
+                                    setCursoDropdownOpen(false);
+                                  }}
+                                >
+                                  {curso.nome}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="data-avaliacao">Data da Avaliação *</label>
+                      <input
+                        id="data-avaliacao"
+                        type="date"
+                        value={formAvaliacao.dataAvaliacao}
+                        onChange={(e) =>
+                          setFormAvaliacao({ ...formAvaliacao, dataAvaliacao: e.target.value })
+                        }
+                        className="form-input"
+                        disabled={loadingAvaliacoesProfessor}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-actions">
+                      <button type="submit" disabled={loadingAvaliacoesProfessor} className="submit-button">
+                        {loadingAvaliacoesProfessor ? 'Salvando...' : editandoAvaliacao ? '💾 Atualizar Avaliação' : '✚ Criar Avaliação'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {loadingAvaliacoesProfessor ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Carregando avaliações...</p>
+                  </div>
+                ) : avaliacoesProfessor.length === 0 ? (
+                  <div className="empty-state-card">
+                    <div className="empty-icon">📝</div>
+                    <h3>Nenhuma avaliação cadastrada</h3>
+                    <p>Clique em "Nova Avaliação" para criar sua primeira avaliação</p>
+                  </div>
+                ) : (
+                  <div className="avaliacoes-grid">
+                    {avaliacoesProfessor.map((avaliacao: any) => (
+                      <div key={avaliacao._id} className="avaliacao-card">
+                        <div className="avaliacao-content">
+                          <h3 className="avaliacao-title">{avaliacao.nome}</h3>
+                          <p className="avaliacao-desc">{avaliacao.descricao}</p>
+                        </div>
+
+                        <div className="avaliacao-info">
+                          <div className="info-item">
+                            <span className="info-label">📅 Data:</span>
+                            <span className="info-value">{new Date(avaliacao.dataAvaliacao).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                          <div className="info-item">
+                            <span className="info-label">📚 Curso:</span>
+                            <span className="info-value">{avaliacao.idCurso?.nome || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="avaliacao-footer">
+                          <button
+                            onClick={() => {
+                              setEditandoAvaliacao(avaliacao);
+                              setFormAvaliacao({
+                                nome: avaliacao.nome,
+                                descricao: avaliacao.descricao,
+                                idCurso: avaliacao.idCurso?._id || '',
+                                dataAvaliacao: avaliacao.dataAvaliacao.split('T')[0]
+                              });
+                              setShowFormAvaliacao(true);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="btn-icon btn-edit"
+                            title="Editar avaliação"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeletarAvaliacao(avaliacao._id)}
+                            className="btn-icon btn-delete"
+                            title="Deletar avaliação"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <footer className="page-footer">
                   <button onClick={() => setCurrentPage('dashboard-professor')} className="back-button-footer">
                     ← Voltar
