@@ -31,9 +31,21 @@ function App() {
   const [editandoAvaliacao, setEditandoAvaliacao] = useState<any>(null);
   const [pesquisaAvaliacao, setPesquisaAvaliacao] = useState('');
   const [pesquisaCurso, setPesquisaCurso] = useState('');
+  const [pesquisaNota, setPesquisaNota] = useState('');
+  const [notasAlunos, setNotasAlunos] = useState<any[]>([]);
+  const [loadingNotasAlunos, setLoadingNotasAlunos] = useState(false);
+  const [showFormNota, setShowFormNota] = useState(false);
+  const [formNota, setFormNota] = useState({ nota: '', observacoes: '', idAvaliacao: '', idAluno: '' });
+  const [editandoNota, setEditandoNota] = useState<any>(null);
+  const [avaliacoesList, setAvaliacoesList] = useState<any[]>([]);
+  const [alunosList, setAlunosList] = useState<any[]>([]);
+  const [avaliacaoDropdownOpen, setAvaliacaoDropdownOpen] = useState(false);
+  const [alunoDropdownOpen, setAlunoDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const reforcoDropdownRef = useRef<HTMLDivElement>(null);
   const cursoDropdownRef = useRef<HTMLDivElement>(null);
+  const avaliacaoDropdownRef = useRef<HTMLDivElement>(null);
+  const alunoDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,6 +145,12 @@ function App() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
       }
+      if (avaliacaoDropdownRef.current && !avaliacaoDropdownRef.current.contains(event.target as Node)) {
+        setAvaliacaoDropdownOpen(false);
+      }
+      if (alunoDropdownRef.current && !alunoDropdownRef.current.contains(event.target as Node)) {
+        setAlunoDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -223,6 +241,21 @@ function App() {
       fetchAvaliacoesProfessor();
     }
   }, [currentPage, usuario, token]);
+
+  // Carregar notas dos alunos quando a página é aberta
+  useEffect(() => {
+    if (currentPage === 'professor-alunos-avaliacoes' && usuario && token) {
+      fetchNotasAlunos();
+    }
+  }, [currentPage, usuario, token]);
+
+  // Carregar listas de avaliações e alunos quando o formulário é aberto
+  useEffect(() => {
+    if (showFormNota && usuario && token) {
+      fetchAvaliacoesList();
+      fetchAlunosList();
+    }
+  }, [showFormNota, usuario, token]);
 
   const fetchCursos = async () => {
     setLoadingCursos(true);
@@ -424,6 +457,139 @@ function App() {
       setError('Erro ao pesquisar cursos');
     } finally {
       setLoadingCursos(false);
+    }
+  };
+
+  const fetchNotasAlunos = async () => {
+    setLoadingNotasAlunos(true);
+    try {
+      const response = await fetch('/api/avaliacoes-alunos', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao buscar notas');
+        return;
+      }
+
+      const data = await response.json();
+      setNotasAlunos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao buscar notas');
+    } finally {
+      setLoadingNotasAlunos(false);
+    }
+  };
+
+  const fetchAvaliacoesList = async () => {
+    try {
+      const response = await fetch('/api/avaliacoes', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setAvaliacoesList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Erro ao buscar avaliações');
+    }
+  };
+
+  const fetchAlunosList = async () => {
+    try {
+      const response = await fetch('/api/alunos', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setAlunosList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Erro ao buscar alunos');
+    }
+  };
+
+  const handleSalvarNota = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formNota.nota || !formNota.idAvaliacao || !formNota.idAluno) {
+      setError('Nota, avaliação e aluno são obrigatórios');
+      return;
+    }
+
+    const notaNum = parseFloat(formNota.nota);
+    if (notaNum < 0 || notaNum > 10) {
+      setError('Nota deve estar entre 0 e 10');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const method = editandoNota ? 'PUT' : 'POST';
+      const endpoint = editandoNota ? `/api/avaliacoes-alunos/${editandoNota._id}` : '/api/avaliacoes-alunos';
+      
+      const body = {
+        nota: notaNum,
+        observacoes: formNota.observacoes,
+        idAvaliacao: formNota.idAvaliacao,
+        idAluno: formNota.idAluno
+      };
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.erro || 'Erro ao salvar nota');
+        return;
+      }
+
+      setSuccess(editandoNota ? 'Nota atualizada com sucesso!' : 'Nota criada com sucesso!');
+      setFormNota({ nota: '', observacoes: '', idAvaliacao: '', idAluno: '' });
+      setEditandoNota(null);
+      setShowFormNota(false);
+      setError('');
+      
+      setTimeout(() => {
+        setSuccess('');
+        fetchNotasAlunos();
+      }, 1500);
+    } catch (err) {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletarNota = async (id: string) => {
+    if (!confirm('Tem certeza que deseja deletar esta nota?')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/avaliacoes-alunos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao deletar nota');
+        return;
+      }
+
+      setSuccess('Nota deletada com sucesso!');
+      setTimeout(() => {
+        setSuccess('');
+        fetchNotasAlunos();
+      }, 1500);
+    } catch (err) {
+      setError('Erro ao deletar nota');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1333,12 +1499,260 @@ function App() {
               /* Notas dos Alunos */
               <div className="avaliacoes-container">
                 <div className="page-header">
-                  <h1 className="page-title">Notas dos Alunos</h1>
+                  <div>
+                    <h1 className="page-title">📊 Notas dos Alunos</h1>
+                    <p className="page-subtitle">Registre e acompanhe as notas dos alunos</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (!showFormNota) {
+                        fetchAvaliacoesList();
+                        fetchAlunosList();
+                      }
+                      setShowFormNota(!showFormNota);
+                      if (editandoNota) {
+                        setEditandoNota(null);
+                        setFormNota({ nota: '', observacoes: '', idAvaliacao: '', idAluno: '' });
+                      }
+                    }}
+                    className="add-button"
+                  >
+                    {showFormNota ? '✕ Cancelar' : '✚ Nova Nota'}
+                  </button>
                 </div>
-                <div className="empty-state-card">
-                  <div className="empty-icon">👥</div>
-                  <p>Funcionalidade em desenvolvimento...</p>
-                </div>
+
+                {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
+
+                {showFormNota && (
+                  <form onSubmit={handleSalvarNota} className="form-container">
+                    <h2 className="form-title">{editandoNota ? 'Editar Nota' : 'Nova Nota'}</h2>
+                    
+                    <div className="form-group" ref={avaliacaoDropdownRef} style={{display: editandoNota ? 'none' : 'block'}}>
+                      <label htmlFor="selectAvaliacao">Avaliação *</label>
+                      <div className="custom-select">
+                        <button
+                          type="button"
+                          className="custom-select-button"
+                          onClick={() => setAvaliacaoDropdownOpen(!avaliacaoDropdownOpen)}
+                          id="selectAvaliacao"
+                          disabled={loading || !!editandoNota}
+                        >
+                          <span>
+                            {formNota.idAvaliacao 
+                              ? avaliacoesList.find((a: any) => a._id === formNota.idAvaliacao)?.nome 
+                              : 'Selecione uma avaliação...'}
+                          </span>
+                          <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </button>
+                        {avaliacaoDropdownOpen && !editandoNota && (
+                          <div className="custom-select-options">
+                            <button
+                              type="button"
+                              className={`custom-select-option ${!formNota.idAvaliacao ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setFormNota({ ...formNota, idAvaliacao: '' });
+                                setAvaliacaoDropdownOpen(false);
+                              }}
+                            >
+                              Selecione uma avaliação...
+                            </button>
+                            {avaliacoesList.map((avaliacao: any) => (
+                              <button
+                                key={avaliacao._id}
+                                type="button"
+                                className={`custom-select-option ${formNota.idAvaliacao === avaliacao._id ? 'active' : ''}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setFormNota({ ...formNota, idAvaliacao: avaliacao._id });
+                                  setAvaliacaoDropdownOpen(false);
+                                }}
+                              >
+                                {avaliacao.nome}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-group" ref={alunoDropdownRef} style={{display: editandoNota ? 'none' : 'block'}}>
+                      <label htmlFor="selectAluno">Aluno *</label>
+                      <div className="custom-select">
+                        <button
+                          type="button"
+                          className="custom-select-button"
+                          onClick={() => setAlunoDropdownOpen(!alunoDropdownOpen)}
+                          id="selectAluno"
+                          disabled={loading || !!editandoNota}
+                        >
+                          <span>
+                            {formNota.idAluno 
+                              ? alunosList.find((a: any) => a._id === formNota.idAluno)?.nome 
+                              : 'Selecione um aluno...'}
+                          </span>
+                          <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </button>
+                        {alunoDropdownOpen && !editandoNota && (
+                          <div className="custom-select-options">
+                            <button
+                              type="button"
+                              className={`custom-select-option ${!formNota.idAluno ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setFormNota({ ...formNota, idAluno: '' });
+                                setAlunoDropdownOpen(false);
+                              }}
+                            >
+                              Selecione um aluno...
+                            </button>
+                            {alunosList.map((aluno: any) => (
+                              <button
+                                key={aluno._id}
+                                type="button"
+                                className={`custom-select-option ${formNota.idAluno === aluno._id ? 'active' : ''}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setFormNota({ ...formNota, idAluno: aluno._id });
+                                  setAlunoDropdownOpen(false);
+                                }}
+                              >
+                                {aluno.nome}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="inputNota">Nota (0-10) *</label>
+                      <input
+                        id="inputNota"
+                        type="number"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        value={formNota.nota}
+                        onChange={(e) => setFormNota({ ...formNota, nota: e.target.value })}
+                        className="form-input"
+                        disabled={loading}
+                        required
+                        placeholder="Ex: 8.5"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="textareaObservacoes">
+                        Observações
+                      </label>
+                      <textarea
+                        id="textareaObservacoes"
+                        value={formNota.observacoes}
+                        onChange={(e) => setFormNota({ ...formNota, observacoes: e.target.value.slice(0, 500) })}
+                        className="form-textarea"
+                        disabled={loading}
+                        maxLength={500}
+                        placeholder="Observações sobre o desempenho do aluno (máx. 500 caracteres)"
+                        rows={4}
+                      />
+                      <div className="char-count">{formNota.observacoes.length}/500 caracteres</div>
+                    </div>
+
+                    <div className="form-actions">
+                      <button type="submit" disabled={loading} className="submit-button">
+                        {loading ? 'Salvando...' : editandoNota ? '💾 Atualizar Nota' : '✚ Registrar Nota'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {!showFormNota && (
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar nota por aluno ou avaliação..."
+                      value={pesquisaNota}
+                      onChange={(e) => setPesquisaNota(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                )}
+
+                {loadingNotasAlunos ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Carregando notas...</p>
+                  </div>
+                ) : notasAlunos.length === 0 ? (
+                  <div className="empty-state-card">
+                    <div className="empty-icon">📊</div>
+                    <h3>Nenhuma nota registrada</h3>
+                    <p>Clique em "Nova Nota" para registrar a primeira nota</p>
+                  </div>
+                ) : (
+                  <div className="cursos-grid">
+                    {notasAlunos
+                      .filter((nota: any) => {
+                        const searchTerm = pesquisaNota.toLowerCase();
+                        return (
+                          nota.idAluno?.nome?.toLowerCase().includes(searchTerm) ||
+                          nota.idAvaliacao?.nome?.toLowerCase().includes(searchTerm)
+                        );
+                      })
+                      .map((nota: any) => (
+                        <div key={nota._id} className="curso-card nota-card-container">
+                          <div className="curso-content">
+                            <h3 className="curso-title">{nota.idAluno?.nome || 'N/A'}</h3>
+                            <p className="curso-desc" style={{fontWeight: '600', color: '#555', marginBottom: '0.25rem'}}>{nota.idAvaliacao?.nome || 'N/A'}</p>
+                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', gap: '1rem'}}>
+                              <div style={{fontSize: '0.8rem', color: '#888'}}>
+                                📅 {nota.idAvaliacao?.dataAvaliacao ? new Date(nota.idAvaliacao.dataAvaliacao).toLocaleDateString('pt-BR') : 'Data não informada'}
+                              </div>
+                              <div style={{fontSize: '0.9rem', color: '#666', fontWeight: '600'}}>Nota: {nota.nota}</div>
+                            </div>
+                            {nota.observacoes && (
+                              <div style={{fontSize: '0.8rem', color: '#777', marginTop: '0.5rem', fontStyle: 'italic'}}>
+                                {nota.observacoes}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="curso-footer">
+                            <button
+                              onClick={() => {
+                                setEditandoNota(nota);
+                                setFormNota({
+                                  nota: nota.nota.toString(),
+                                  observacoes: nota.observacoes || '',
+                                  idAvaliacao: nota.idAvaliacao?._id || '',
+                                  idAluno: nota.idAluno?._id || ''
+                                });
+                                setShowFormNota(true);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="btn-icon btn-edit"
+                              title="Editar nota"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDeletarNota(nota._id)}
+                              className="btn-icon btn-delete"
+                              title="Deletar nota"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             ) : currentPage === 'professor-alunos' ? (
               /* Gerenciar Alunos */

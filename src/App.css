@@ -1499,3 +1499,16 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.nota-card-container .curso-title {
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+}
+
+.nota-card-container .curso-content {
+  gap: 0;
+}
+
+.nota-card-container .curso-desc {
+  font-size: 0.85rem;
+}
