@@ -2009,7 +2009,7 @@ function App() {
                         <div className="curso-content">
                           <h3 className="curso-title">{aluno.nome}</h3>
                           <p className="curso-desc" style={{fontSize: '0.85rem', color: '#999', marginTop: '0.5rem'}}>
-                            ID: {aluno._id}
+                            📅 {aluno.updatedAt ? new Date(aluno.updatedAt).toLocaleDateString('pt-BR') : 'Data não disponível'}
                           </p>
                         </div>
 
