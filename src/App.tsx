@@ -47,6 +47,12 @@ function App() {
   const [formAluno, setFormAluno] = useState({ nome: '', senha: '' });
   const [editandoAluno, setEditandoAluno] = useState<any>(null);
   const [pesquisaAluno, setPesquisaAluno] = useState('');
+  const [professores, setProfessores] = useState<any[]>([]);
+  const [loadingProfessores, setLoadingProfessores] = useState(false);
+  const [showFormProfessor, setShowFormProfessor] = useState(false);
+  const [formProfessor, setFormProfessor] = useState({ nome: '', senha: '' });
+  const [editandoProfessor, setEditandoProfessor] = useState<any>(null);
+  const [pesquisaProfessor, setPesquisaProfessor] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const reforcoDropdownRef = useRef<HTMLDivElement>(null);
   const cursoDropdownRef = useRef<HTMLDivElement>(null);
@@ -259,6 +265,13 @@ function App() {
   useEffect(() => {
     if (currentPage === 'professor-alunos' && usuario && token) {
       fetchAlunos();
+    }
+  }, [currentPage, usuario, token]);
+
+  // Carregar professores quando a página é aberta
+  useEffect(() => {
+    if (currentPage === 'professor-professores' && usuario && token) {
+      fetchProfessores();
     }
   }, [currentPage, usuario, token]);
 
@@ -523,6 +536,149 @@ function App() {
       setError('Erro ao pesquisar alunos');
     } finally {
       setLoadingAlunos(false);
+    }
+  };
+
+  const fetchProfessores = async () => {
+    setLoadingProfessores(true);
+    try {
+      const response = await fetch('/api/professores', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 404) {
+          setProfessores([]);
+        } else {
+          setError(errorData.erro || 'Erro ao buscar professores');
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setProfessores(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao buscar professores');
+    } finally {
+      setLoadingProfessores(false);
+    }
+  };
+
+  const handleSalvarProfessor = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formProfessor.nome || !formProfessor.senha) {
+      setError('Nome e senha são obrigatórios');
+      return;
+    }
+
+    if (formProfessor.senha.length < 4) {
+      setError('A senha deve ter no mínimo 4 caracteres');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const method = editandoProfessor ? 'PUT' : 'POST';
+      const endpoint = editandoProfessor ? `/api/professores/${editandoProfessor._id}` : '/api/professores';
+      
+      const body = {
+        nome: formProfessor.nome,
+        ...(editandoProfessor ? { senha: formProfessor.senha } : { senha: formProfessor.senha })
+      };
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.erro || 'Erro ao salvar professor');
+        return;
+      }
+
+      setSuccess(editandoProfessor ? 'Professor atualizado com sucesso!' : 'Professor criado com sucesso!');
+      setFormProfessor({ nome: '', senha: '' });
+      setEditandoProfessor(null);
+      setShowFormProfessor(false);
+      setError('');
+      
+      setTimeout(() => {
+        setSuccess('');
+        fetchProfessores();
+      }, 1500);
+    } catch (err) {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletarProfessor = async (id: string) => {
+    if (!confirm('Tem certeza que deseja deletar este professor?')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/professores/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao deletar professor');
+        return;
+      }
+
+      setSuccess('Professor deletado com sucesso!');
+      setError('');
+      setTimeout(() => {
+        setSuccess('');
+        fetchProfessores();
+      }, 1500);
+    } catch (err) {
+      setError('Erro ao deletar professor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pesquisarProfessor = async (termo: string) => {
+    setPesquisaProfessor(termo);
+    if (!termo.trim()) {
+      fetchProfessores();
+      return;
+    }
+
+    setLoadingProfessores(true);
+    try {
+      const response = await fetch(`/api/professores/nome/${encodeURIComponent(termo)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setProfessores([]);
+          return;
+        }
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao pesquisar professores');
+        return;
+      }
+
+      const data = await response.json();
+      setProfessores(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao pesquisar professores');
+    } finally {
+      setLoadingProfessores(false);
     }
   };
 
@@ -1100,6 +1256,7 @@ function App() {
                 {currentPage === 'professor-avaliacoes' && 'AVALIAÇÕES'}
                 {currentPage === 'professor-alunos-avaliacoes' && 'NOTAS DOS ALUNOS'}
                 {currentPage === 'professor-alunos' && 'ALUNOS'}
+                {currentPage === 'professor-professores' && 'PROFESSORES'}
               </span>
             </div>
             {currentPage === 'dashboard-aluno' || currentPage === 'dashboard-professor' ? (
@@ -1865,11 +2022,17 @@ function App() {
                           nota.idAvaliacao?.nome?.toLowerCase().includes(searchTerm)
                         );
                       })
+                      .sort((a: any, b: any) => {
+                        const dataA = new Date(a.idAvaliacao?.dataAvaliacao || 0).getTime();
+                        const dataB = new Date(b.idAvaliacao?.dataAvaliacao || 0).getTime();
+                        return dataB - dataA;
+                      })
                       .map((nota: any) => (
                         <div key={nota._id} className="curso-card nota-card-container">
                           <div className="curso-content">
                             <h3 className="curso-title">{nota.idAluno?.nome || 'N/A'}</h3>
                             <p className="curso-desc" style={{fontWeight: '600', color: '#555', marginBottom: '0.25rem'}}>{nota.idAvaliacao?.nome || 'N/A'}</p>
+                            <p className="curso-desc" style={{fontSize: '0.8rem', color: '#888', marginBottom: '0.5rem'}}>📚 {nota.idAvaliacao?.idCurso?.nome || 'Curso não informado'}</p>
                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', gap: '1rem'}}>
                               <div style={{fontSize: '0.8rem', color: '#888'}}>
                                 📅 {nota.idAvaliacao?.dataAvaliacao ? new Date(nota.idAvaliacao.dataAvaliacao).toLocaleDateString('pt-BR') : 'Data não informada'}
@@ -2048,12 +2211,132 @@ function App() {
               /* Gerenciar Professores */
               <div className="avaliacoes-container">
                 <div className="page-header">
-                  <h1 className="page-title">Gerenciar Professores</h1>
+                  <div>
+                    <h1 className="page-title">👨‍🏫 Gerenciar Professores</h1>
+                    <p className="page-subtitle">Crie, edite e organize seus professores</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (!showFormProfessor) {
+                        fetchProfessores();
+                      }
+                      setShowFormProfessor(!showFormProfessor);
+                      if (editandoProfessor) {
+                        setEditandoProfessor(null);
+                        setFormProfessor({ nome: '', senha: '' });
+                      }
+                      setError('');
+                    }}
+                    className="add-button"
+                  >
+                    {showFormProfessor ? '✕ Cancelar' : '✚ Novo Professor'}
+                  </button>
                 </div>
-                <div className="empty-state-card">
-                  <div className="empty-icon">👨‍🏫</div>
-                  <p>Funcionalidade em desenvolvimento...</p>
-                </div>
+
+                {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
+
+                {showFormProfessor && (
+                  <form onSubmit={handleSalvarProfessor} className="form-container">
+                    <h2 className="form-title">{editandoProfessor ? 'Editar Professor' : 'Novo Professor'}</h2>
+                    <div className="form-group">
+                      <label htmlFor="nome-professor">Nome do Professor *</label>
+                      <input
+                        id="nome-professor"
+                        type="text"
+                        placeholder="Ex: João Silva"
+                        value={formProfessor.nome}
+                        onChange={(e) => setFormProfessor({ ...formProfessor, nome: e.target.value })}
+                        className="form-input"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="senha-professor">Senha *</label>
+                      <input
+                        id="senha-professor"
+                        type="password"
+                        placeholder="Mínimo 4 caracteres"
+                        value={formProfessor.senha}
+                        onChange={(e) => setFormProfessor({ ...formProfessor, senha: e.target.value })}
+                        className="form-input"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-actions">
+                      <button type="submit" disabled={loading} className="submit-button">
+                        {loading ? 'Salvando...' : editandoProfessor ? '💾 Atualizar Professor' : '✚ Criar Professor'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {!showFormProfessor && (
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar professor por nome..."
+                      value={pesquisaProfessor}
+                      onChange={(e) => pesquisarProfessor(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                )}
+
+                {loadingProfessores ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Carregando professores...</p>
+                  </div>
+                ) : professores.length === 0 ? (
+                  <div className="empty-state-card">
+                    <div className="empty-icon">👨‍🏫</div>
+                    <h3>Nenhum professor cadastrado</h3>
+                    <p>Clique em "Novo Professor" para criar seu primeiro professor</p>
+                  </div>
+                ) : (
+                  <div className="cursos-grid">
+                    {professores.map((professor: any) => (
+                      <div key={professor._id} className="curso-card">
+                        <div className="curso-content">
+                          <h3 className="curso-title">{professor.nome}</h3>
+                          <p className="curso-desc" style={{fontSize: '0.85rem', color: '#999', marginTop: '0.5rem'}}>
+                            📅 {professor.updatedAt ? new Date(professor.updatedAt).toLocaleDateString('pt-BR') : 'Data não disponível'}
+                          </p>
+                        </div>
+
+                        <div className="curso-footer">
+                          <button
+                            onClick={() => {
+                              setEditandoProfessor(professor);
+                              setFormProfessor({
+                                nome: professor.nome,
+                                senha: ''
+                              });
+                              setShowFormProfessor(true);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="btn-icon btn-edit"
+                            title="Editar professor"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeletarProfessor(professor._id)}
+                            className="btn-icon btn-delete"
+                            title="Deletar professor"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               /* Fallback */
