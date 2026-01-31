@@ -41,6 +41,12 @@ function App() {
   const [alunosList, setAlunosList] = useState<any[]>([]);
   const [avaliacaoDropdownOpen, setAvaliacaoDropdownOpen] = useState(false);
   const [alunoDropdownOpen, setAlunoDropdownOpen] = useState(false);
+  const [alunos, setAlunos] = useState<any[]>([]);
+  const [loadingAlunos, setLoadingAlunos] = useState(false);
+  const [showFormAluno, setShowFormAluno] = useState(false);
+  const [formAluno, setFormAluno] = useState({ nome: '', senha: '' });
+  const [editandoAluno, setEditandoAluno] = useState<any>(null);
+  const [pesquisaAluno, setPesquisaAluno] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const reforcoDropdownRef = useRef<HTMLDivElement>(null);
   const cursoDropdownRef = useRef<HTMLDivElement>(null);
@@ -249,6 +255,13 @@ function App() {
     }
   }, [currentPage, usuario, token]);
 
+  // Carregar alunos quando a página é aberta
+  useEffect(() => {
+    if (currentPage === 'professor-alunos' && usuario && token) {
+      fetchAlunos();
+    }
+  }, [currentPage, usuario, token]);
+
   // Carregar listas de avaliações e alunos quando o formulário é aberto
   useEffect(() => {
     if (showFormNota && usuario && token) {
@@ -367,6 +380,149 @@ function App() {
       setError('Erro ao deletar curso');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAlunos = async () => {
+    setLoadingAlunos(true);
+    try {
+      const response = await fetch('/api/alunos', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 404) {
+          setAlunos([]);
+        } else {
+          setError(errorData.erro || 'Erro ao buscar alunos');
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setAlunos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao buscar alunos');
+    } finally {
+      setLoadingAlunos(false);
+    }
+  };
+
+  const handleSalvarAluno = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formAluno.nome || !formAluno.senha) {
+      setError('Nome e senha são obrigatórios');
+      return;
+    }
+
+    if (formAluno.senha.length < 4) {
+      setError('A senha deve ter no mínimo 4 caracteres');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const method = editandoAluno ? 'PUT' : 'POST';
+      const endpoint = editandoAluno ? `/api/alunos/${editandoAluno._id}` : '/api/alunos';
+      
+      const body = {
+        nome: formAluno.nome,
+        ...(editandoAluno ? { senha: formAluno.senha } : { senha: formAluno.senha })
+      };
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.erro || 'Erro ao salvar aluno');
+        return;
+      }
+
+      setSuccess(editandoAluno ? 'Aluno atualizado com sucesso!' : 'Aluno criado com sucesso!');
+      setFormAluno({ nome: '', senha: '' });
+      setEditandoAluno(null);
+      setShowFormAluno(false);
+      setError('');
+      
+      setTimeout(() => {
+        setSuccess('');
+        fetchAlunos();
+      }, 1500);
+    } catch (err) {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletarAluno = async (id: string) => {
+    if (!confirm('Tem certeza que deseja deletar este aluno?')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/alunos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao deletar aluno');
+        return;
+      }
+
+      setSuccess('Aluno deletado com sucesso!');
+      setError('');
+      setTimeout(() => {
+        setSuccess('');
+        fetchAlunos();
+      }, 1500);
+    } catch (err) {
+      setError('Erro ao deletar aluno');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pesquisarAluno = async (termo: string) => {
+    setPesquisaAluno(termo);
+    if (!termo.trim()) {
+      fetchAlunos();
+      return;
+    }
+
+    setLoadingAlunos(true);
+    try {
+      const response = await fetch(`/api/alunos/nome/${encodeURIComponent(termo)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setAlunos([]);
+          return;
+        }
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao pesquisar alunos');
+        return;
+      }
+
+      const data = await response.json();
+      setAlunos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao pesquisar alunos');
+    } finally {
+      setLoadingAlunos(false);
     }
   };
 
@@ -941,6 +1097,8 @@ function App() {
                 {currentPage === 'todas-avaliacoes' && 'TODAS AS AVALIAÇÕES'}
                 {currentPage === 'professor-cursos' && 'CURSOS'}
                 {currentPage === 'professor-avaliacoes' && 'AVALIAÇÕES'}
+                {currentPage === 'professor-alunos-avaliacoes' && 'NOTAS DOS ALUNOS'}
+                {currentPage === 'professor-alunos' && 'ALUNOS'}
               </span>
             </div>
             {currentPage === 'dashboard-aluno' || currentPage === 'dashboard-professor' ? (
@@ -1758,12 +1916,131 @@ function App() {
               /* Gerenciar Alunos */
               <div className="avaliacoes-container">
                 <div className="page-header">
-                  <h1 className="page-title">Gerenciar Alunos</h1>
+                  <div>
+                    <h1 className="page-title">👥 Gerenciar Alunos</h1>
+                    <p className="page-subtitle">Crie, edite e organize seus alunos</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (!showFormAluno) {
+                        fetchAlunos();
+                      }
+                      setShowFormAluno(!showFormAluno);
+                      if (editandoAluno) {
+                        setEditandoAluno(null);
+                        setFormAluno({ nome: '', senha: '' });
+                      }
+                    }}
+                    className="add-button"
+                  >
+                    {showFormAluno ? '✕ Cancelar' : '✚ Novo Aluno'}
+                  </button>
                 </div>
-                <div className="empty-state-card">
-                  <div className="empty-icon">🎓</div>
-                  <p>Funcionalidade em desenvolvimento...</p>
-                </div>
+
+                {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
+
+                {showFormAluno && (
+                  <form onSubmit={handleSalvarAluno} className="form-container">
+                    <h2 className="form-title">{editandoAluno ? 'Editar Aluno' : 'Novo Aluno'}</h2>
+                    <div className="form-group">
+                      <label htmlFor="nome-aluno">Nome do Aluno *</label>
+                      <input
+                        id="nome-aluno"
+                        type="text"
+                        placeholder="Ex: João Silva"
+                        value={formAluno.nome}
+                        onChange={(e) => setFormAluno({ ...formAluno, nome: e.target.value })}
+                        className="form-input"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="senha-aluno">Senha *</label>
+                      <input
+                        id="senha-aluno"
+                        type="password"
+                        placeholder="Mínimo 4 caracteres"
+                        value={formAluno.senha}
+                        onChange={(e) => setFormAluno({ ...formAluno, senha: e.target.value })}
+                        className="form-input"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-actions">
+                      <button type="submit" disabled={loading} className="submit-button">
+                        {loading ? 'Salvando...' : editandoAluno ? '💾 Atualizar Aluno' : '✚ Criar Aluno'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {!showFormAluno && (
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar aluno por nome..."
+                      value={pesquisaAluno}
+                      onChange={(e) => pesquisarAluno(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                )}
+
+                {loadingAlunos ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Carregando alunos...</p>
+                  </div>
+                ) : alunos.length === 0 ? (
+                  <div className="empty-state-card">
+                    <div className="empty-icon">🎓</div>
+                    <h3>Nenhum aluno cadastrado</h3>
+                    <p>Clique em "Novo Aluno" para criar seu primeiro aluno</p>
+                  </div>
+                ) : (
+                  <div className="cursos-grid">
+                    {alunos.map((aluno: any) => (
+                      <div key={aluno._id} className="curso-card">
+                        <div className="curso-content">
+                          <h3 className="curso-title">{aluno.nome}</h3>
+                          <p className="curso-desc" style={{fontSize: '0.85rem', color: '#999', marginTop: '0.5rem'}}>
+                            ID: {aluno._id}
+                          </p>
+                        </div>
+
+                        <div className="curso-footer">
+                          <button
+                            onClick={() => {
+                              setEditandoAluno(aluno);
+                              setFormAluno({
+                                nome: aluno.nome,
+                                senha: ''
+                              });
+                              setShowFormAluno(true);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="btn-icon btn-edit"
+                            title="Editar aluno"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeletarAluno(aluno._id)}
+                            className="btn-icon btn-delete"
+                            title="Deletar aluno"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : currentPage === 'professor-professores' ? (
               /* Gerenciar Professores */
