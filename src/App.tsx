@@ -618,6 +618,7 @@ function App() {
 
   const fetchNotasAlunos = async () => {
     setLoadingNotasAlunos(true);
+    setError('');
     try {
       const response = await fetch('/api/avaliacoes-alunos', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -1672,6 +1673,7 @@ function App() {
                         setEditandoNota(null);
                         setFormNota({ nota: '', observacoes: '', idAvaliacao: '', idAluno: '' });
                       }
+                      setError('');
                     }}
                     className="add-button"
                   >
