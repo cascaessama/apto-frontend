@@ -29,6 +29,8 @@ function App() {
   const [showFormAvaliacao, setShowFormAvaliacao] = useState(false);
   const [formAvaliacao, setFormAvaliacao] = useState({ nome: '', descricao: '', idCurso: '', dataAvaliacao: '' });
   const [editandoAvaliacao, setEditandoAvaliacao] = useState<any>(null);
+  const [pesquisaAvaliacao, setPesquisaAvaliacao] = useState('');
+  const [pesquisaCurso, setPesquisaCurso] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const reforcoDropdownRef = useRef<HTMLDivElement>(null);
   const cursoDropdownRef = useRef<HTMLDivElement>(null);
@@ -361,6 +363,70 @@ function App() {
     }
   };
 
+  const pesquisarAvaliacao = async (termo: string) => {
+    setPesquisaAvaliacao(termo);
+    if (!termo.trim()) {
+      fetchAvaliacoesProfessor();
+      return;
+    }
+
+    setLoadingAvaliacoesProfessor(true);
+    try {
+      const response = await fetch(`/api/avaliacoes/nome/${encodeURIComponent(termo)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setAvaliacoesProfessor([]);
+          return;
+        }
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao pesquisar avaliações');
+        return;
+      }
+
+      const data = await response.json();
+      setAvaliacoesProfessor(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao pesquisar avaliações');
+    } finally {
+      setLoadingAvaliacoesProfessor(false);
+    }
+  };
+
+  const pesquisarCurso = async (termo: string) => {
+    setPesquisaCurso(termo);
+    if (!termo.trim()) {
+      fetchCursos();
+      return;
+    }
+
+    setLoadingCursos(true);
+    try {
+      const response = await fetch(`/api/cursos/nome/${encodeURIComponent(termo)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setCursos([]);
+          return;
+        }
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao pesquisar cursos');
+        return;
+      }
+
+      const data = await response.json();
+      setCursos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao pesquisar cursos');
+    } finally {
+      setLoadingCursos(false);
+    }
+  };
+
   const handleSalvarAvaliacao = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -405,6 +471,7 @@ function App() {
       setSuccess(editandoAvaliacao ? 'Avaliação atualizada com sucesso!' : 'Avaliação criada com sucesso!');
       setFormAvaliacao({ nome: '', descricao: '', idCurso: '', dataAvaliacao: '' });
       setEditandoAvaliacao(null);
+      setShowFormAvaliacao(false);
       setError('');
       
       setTimeout(() => {
@@ -710,7 +777,13 @@ function App() {
                 {currentPage === 'professor-avaliacoes' && 'AVALIAÇÕES'}
               </span>
             </div>
-            <button onClick={handleLogout} className="header-logout">Sair</button>
+            {currentPage === 'dashboard-aluno' || currentPage === 'dashboard-professor' ? (
+              <button onClick={handleLogout} className="header-logout">Sair</button>
+            ) : (
+              <button onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setCurrentPage(usuario?.tipo === 'aluno' ? 'dashboard-aluno' : 'dashboard-professor'); }} className="header-logout back-button-header">
+                ← Voltar
+              </button>
+            )}
           </header>
 
           <div className="app-content">
@@ -780,12 +853,6 @@ function App() {
                     ))}
                   </div>
                 )}
-
-                <footer className="page-footer">
-                  <button onClick={() => setCurrentPage('dashboard-aluno')} className="back-button-footer">
-                    ← Voltar
-                  </button>
-                </footer>
               </div>
             ) : currentPage === 'todas-avaliacoes' ? (
               /* Todas as Avaliações Page */
@@ -833,12 +900,6 @@ function App() {
                     ))}
                   </div>
                 )}
-
-                <footer className="page-footer">
-                  <button onClick={() => setCurrentPage('dashboard-aluno')} className="back-button-footer">
-                    ← Voltar
-                  </button>
-                </footer>
               </div>
             ) : currentPage === 'dashboard-professor' ? (
               /* Professor Dashboard */
@@ -994,6 +1055,18 @@ function App() {
                   </form>
                 )}
 
+                {!showFormCurso && (
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar curso por nome..."
+                      value={pesquisaCurso}
+                      onChange={(e) => pesquisarCurso(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                )}
+
                 {loadingCursos ? (
                   <div className="loading-state">
                     <div className="spinner"></div>
@@ -1050,12 +1123,6 @@ function App() {
                     ))}
                   </div>
                 )}
-
-                <footer className="page-footer">
-                  <button onClick={() => setCurrentPage('dashboard-professor')} className="back-button-footer">
-                    ← Voltar
-                  </button>
-                </footer>
               </div>
             ) : currentPage === 'professor-avaliacoes' ? (
               /* Gerenciar Avaliações */
@@ -1081,6 +1148,18 @@ function App() {
                     {showFormAvaliacao ? '✕ Cancelar' : '✚ Nova Avaliação'}
                   </button>
                 </div>
+
+                {!showFormAvaliacao && (
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar avaliação por nome..."
+                      value={pesquisaAvaliacao}
+                      onChange={(e) => pesquisarAvaliacao(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                )}
 
                 {error && <div className="error-message">{error}</div>}
                 {success && <div className="success-message">{success}</div>}
@@ -1249,12 +1328,6 @@ function App() {
                     ))}
                   </div>
                 )}
-
-                <footer className="page-footer">
-                  <button onClick={() => setCurrentPage('dashboard-professor')} className="back-button-footer">
-                    ← Voltar
-                  </button>
-                </footer>
               </div>
             ) : currentPage === 'professor-alunos-avaliacoes' ? (
               /* Notas dos Alunos */
@@ -1266,11 +1339,6 @@ function App() {
                   <div className="empty-icon">👥</div>
                   <p>Funcionalidade em desenvolvimento...</p>
                 </div>
-                <footer className="page-footer">
-                  <button onClick={() => setCurrentPage('dashboard-professor')} className="back-button-footer">
-                    ← Voltar
-                  </button>
-                </footer>
               </div>
             ) : currentPage === 'professor-alunos' ? (
               /* Gerenciar Alunos */
@@ -1282,11 +1350,6 @@ function App() {
                   <div className="empty-icon">🎓</div>
                   <p>Funcionalidade em desenvolvimento...</p>
                 </div>
-                <footer className="page-footer">
-                  <button onClick={() => setCurrentPage('dashboard-professor')} className="back-button-footer">
-                    ← Voltar
-                  </button>
-                </footer>
               </div>
             ) : currentPage === 'professor-professores' ? (
               /* Gerenciar Professores */
@@ -1298,11 +1361,6 @@ function App() {
                   <div className="empty-icon">👨‍🏫</div>
                   <p>Funcionalidade em desenvolvimento...</p>
                 </div>
-                <footer className="page-footer">
-                  <button onClick={() => setCurrentPage('dashboard-professor')} className="back-button-footer">
-                    ← Voltar
-                  </button>
-                </footer>
               </div>
             ) : (
               /* Fallback */

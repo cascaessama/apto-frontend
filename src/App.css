@@ -110,6 +110,15 @@ body {
   transform: translateY(0);
 }
 
+.header-logout.back-button-header {
+  background-color: #646cff;
+}
+
+.header-logout.back-button-header:hover {
+  background-color: #535bf2;
+  transform: translateY(-1px);
+}
+
 .app-content {
   flex: 1;
   display: flex;
