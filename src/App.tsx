@@ -12,12 +12,19 @@ function App() {
   const [token, setToken] = useState<string | null>(null);
   const [usuario, setUsuario] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [reforcoDropdownOpen, setReforcoDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('login');
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
   const [loadingAvaliacoes, setLoadingAvaliacoes] = useState(false);
   const [confirmSenha, setConfirmSenha] = useState('');
   const [success, setSuccess] = useState('');
+  const [cursos, setCursos] = useState<any[]>([]);
+  const [loadingCursos, setLoadingCursos] = useState(false);
+  const [showFormCurso, setShowFormCurso] = useState(false);
+  const [formCurso, setFormCurso] = useState({ nome: '', descricao: '', idCursoReforco: '' });
+  const [editandoCurso, setEditandoCurso] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const reforcoDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,11 +189,134 @@ function App() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
       }
+      if (reforcoDropdownRef.current && !reforcoDropdownRef.current.contains(event.target as Node)) {
+        setReforcoDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Carregar cursos quando a página é aberta
+  useEffect(() => {
+    if (currentPage === 'professor-cursos' && usuario && token) {
+      fetchCursos();
+    }
+  }, [currentPage, usuario, token]);
+
+  const fetchCursos = async () => {
+    setLoadingCursos(true);
+    try {
+      const response = await fetch('/api/cursos', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 404) {
+          setCursos([]);
+        } else {
+          setError(errorData.erro || 'Erro ao buscar cursos');
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setCursos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Erro ao buscar cursos');
+    } finally {
+      setLoadingCursos(false);
+    }
+  };
+
+  const handleSalvarCurso = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formCurso.nome || !formCurso.descricao) {
+      setError('Nome e descrição são obrigatórios');
+      return;
+    }
+
+    if (formCurso.descricao.length > 500) {
+      setError('Descrição não pode exceder 500 caracteres');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const method = editandoCurso ? 'PUT' : 'POST';
+      const endpoint = editandoCurso ? `/api/cursos/${editandoCurso._id}` : '/api/cursos';
+      
+      const body = {
+        nome: formCurso.nome,
+        descricao: formCurso.descricao,
+        idProfessor: usuario.id,
+        ...(formCurso.idCursoReforco ? { idCursoReforco: formCurso.idCursoReforco } : { idCursoReforco: null })
+      };
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.erro || 'Erro ao salvar curso');
+        return;
+      }
+
+      setSuccess(editandoCurso ? 'Curso atualizado com sucesso!' : 'Curso criado com sucesso!');
+      setFormCurso({ nome: '', descricao: '', idCursoReforco: '' });
+      setEditandoCurso(null);
+      setShowFormCurso(false);
+      setError('');
+      
+      setTimeout(() => {
+        setSuccess('');
+        fetchCursos();
+      }, 1500);
+    } catch (err) {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletarCurso = async (id: string) => {
+    if (!confirm('Tem certeza que deseja deletar este curso?')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/cursos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.erro || 'Erro ao deletar curso');
+        return;
+      }
+
+      setSuccess('Curso deletado com sucesso!');
+      setError('');
+      setTimeout(() => {
+        setSuccess('');
+        fetchCursos();
+      }, 1500);
+    } catch (err) {
+      setError('Erro ao deletar curso');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="app-wrapper">
@@ -447,6 +577,7 @@ function App() {
                 {currentPage === 'dashboard-professor' && 'HOME'}
                 {currentPage === 'avaliacoes-reforco' && 'AVALIAÇÕES PARA REFORÇO'}
                 {currentPage === 'todas-avaliacoes' && 'TODAS AS AVALIAÇÕES'}
+                {currentPage === 'professor-cursos' && 'CURSOS'}
               </span>
             </div>
             <button onClick={handleLogout} className="header-logout">Sair</button>
@@ -618,12 +749,178 @@ function App() {
               /* Gerenciar Cursos */
               <div className="avaliacoes-container">
                 <div className="page-header">
-                  <h1 className="page-title">Gerenciar Cursos</h1>
+                  <div>
+                    <h1 className="page-title">📚 Gerenciar Cursos</h1>
+                    <p className="page-subtitle">Crie, edite e organize seus cursos</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (!showFormCurso) {
+                        fetchCursos();
+                      }
+                      setShowFormCurso(!showFormCurso);
+                      if (editandoCurso) {
+                        setEditandoCurso(null);
+                        setFormCurso({ nome: '', descricao: '', idCursoReforco: '' });
+                      }
+                    }}
+                    className="add-button"
+                  >
+                    {showFormCurso ? '✕ Cancelar' : '✚ Novo Curso'}
+                  </button>
                 </div>
-                <div className="empty-state-card">
-                  <div className="empty-icon">📚</div>
-                  <p>Funcionalidade em desenvolvimento...</p>
-                </div>
+
+                {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
+
+                {showFormCurso && (
+                  <form onSubmit={handleSalvarCurso} className="form-container">
+                    <h2 className="form-title">{editandoCurso ? 'Editar Curso' : 'Novo Curso'}</h2>
+                    <div className="form-group">
+                      <label htmlFor="nome-curso">Nome do Curso *</label>
+                      <input
+                        id="nome-curso"
+                        type="text"
+                        placeholder="Ex: Matemática Avançada"
+                        value={formCurso.nome}
+                        onChange={(e) => setFormCurso({ ...formCurso, nome: e.target.value })}
+                        className="form-input"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="desc-curso">Descrição *</label>
+                      <textarea
+                        id="desc-curso"
+                        placeholder="Descrição clara do curso (máx. 500 caracteres)"
+                        value={formCurso.descricao}
+                        onChange={(e) => setFormCurso({ ...formCurso, descricao: e.target.value })}
+                        className="form-textarea"
+                        disabled={loading}
+                        maxLength={500}
+                        rows={4}
+                        required
+                      />
+                      <div className="char-count">{formCurso.descricao.length}/500 caracteres</div>
+                    </div>
+
+                    <div className="form-group" ref={reforcoDropdownRef}>
+                      <label htmlFor="reforco-curso">Curso de Reforço (Opcional)</label>
+                      <div className="custom-select">
+                        <button
+                          type="button"
+                          className="custom-select-button"
+                          onClick={() => setReforcoDropdownOpen(!reforcoDropdownOpen)}
+                          id="reforco-curso"
+                        >
+                          <span>
+                            {formCurso.idCursoReforco 
+                              ? cursos.find((c: any) => c._id === formCurso.idCursoReforco)?.nome 
+                              : 'Nenhum curso de reforço'}
+                          </span>
+                          <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </button>
+                        {reforcoDropdownOpen && (
+                          <div className="custom-select-options">
+                            <button
+                              type="button"
+                              className={`custom-select-option ${!formCurso.idCursoReforco ? 'active' : ''}`}
+                              onClick={() => {
+                                setFormCurso({ ...formCurso, idCursoReforco: '' });
+                                setReforcoDropdownOpen(false);
+                              }}
+                            >
+                              Nenhum curso de reforço
+                            </button>
+                            {cursos
+                              .filter((c: any) => c._id !== editandoCurso?._id)
+                              .map((c: any) => (
+                                <button
+                                  key={c._id}
+                                  type="button"
+                                  className={`custom-select-option ${formCurso.idCursoReforco === c._id ? 'active' : ''}`}
+                                  onClick={() => {
+                                    setFormCurso({ ...formCurso, idCursoReforco: c._id });
+                                    setReforcoDropdownOpen(false);
+                                  }}
+                                >
+                                  {c.nome}
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-actions">
+                      <button type="submit" disabled={loading} className="submit-button">
+                        {loading ? 'Salvando...' : editandoCurso ? '💾 Atualizar Curso' : '✚ Criar Curso'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {loadingCursos ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Carregando cursos...</p>
+                  </div>
+                ) : cursos.length === 0 ? (
+                  <div className="empty-state-card">
+                    <div className="empty-icon">📚</div>
+                    <h3>Nenhum curso cadastrado</h3>
+                    <p>Clique em "Novo Curso" para criar seu primeiro curso</p>
+                  </div>
+                ) : (
+                  <div className="cursos-grid">
+                    {cursos.map((curso: any) => (
+                      <div key={curso._id} className="curso-card">
+                        <div className="curso-content">
+                          <h3 className="curso-title">{curso.nome}</h3>
+                          <p className="curso-desc">{curso.descricao}</p>
+                        </div>
+
+                        {curso.idCursoReforco && (
+                          <div className="curso-reforco-badge">
+                            <span className="reforco-label">🎓 Curso de Reforço:</span>
+                            <span className="reforco-name">{curso.idCursoReforco?.nome}</span>
+                          </div>
+                        )}
+
+                        <div className="curso-footer">
+                          <button
+                            onClick={() => {
+                              setEditandoCurso(curso);
+                              setFormCurso({
+                                nome: curso.nome,
+                                descricao: curso.descricao,
+                                idCursoReforco: curso.idCursoReforco?._id || ''
+                              });
+                              setShowFormCurso(true);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="btn-icon btn-edit"
+                            title="Editar curso"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeletarCurso(curso._id)}
+                            className="btn-icon btn-delete"
+                            title="Deletar curso"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <footer className="page-footer">
                   <button onClick={() => setCurrentPage('dashboard-professor')} className="back-button-footer">
                     ← Voltar
