@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -5,7 +7,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: #f5f7fb;
   color: #333;
 }
@@ -39,16 +41,79 @@ body {
 .app-title {
   font-size: 2.2rem;
   font-weight: 700;
+  font-family: 'Poppins', sans-serif;
   color: #646cff;
   letter-spacing: 0.1em;
+}
+
+/* Dashboard Header */
+.dashboard-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  padding: 1rem;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(100, 108, 255, 0.06);
+  box-sizing: border-box;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-logo {
+  width: 40px;
+  height: 40px;
+  display: block;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #646cff;
+  position: absolute;
+  left: 50%;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 0.02em;
+  transform: translateX(-50%);
+}
+
+.header-logout {
+  padding: 0.5rem 1rem;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.header-logout:hover {
+  background-color: #d32f2f;
+  transform: translateY(-1px);
+}
+
+.header-logout:active {
+  transform: translateY(0);
 }
 
 .app-content {
   flex: 1;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
+  padding: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 100%;
 }
 
 .login-form-container {
@@ -179,6 +244,206 @@ body {
   font-weight: 600;
 }
 
+/* Dashboard Styles */
+.dashboard-container {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(100, 108, 255, 0.08);
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h2 {
+  font-size: 1.5rem;
+  color: #222;
+}
+
+.logout-btn {
+  padding: 0.5rem 1rem;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #d32f2f;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.feature-card {
+  padding: 1.5rem;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+  text-align: left;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  background-color: #f0f0f0;
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.15);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.feature-card h3 {
+  font-size: 1.1rem;
+  color: #222;
+  margin-bottom: 0.25rem;
+}
+
+.feature-card p {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Avaliacoes Display */
+.avaliacoes-container {
+  width: 100%;
+  max-width: 1000px;
+  background: #fff;
+  padding: 1.5rem 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(100, 108, 255, 0.08);
+  margin: 0 auto;
+}
+
+.avaliacoes-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background-color: #646cff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #535bf2;
+}
+
+.avaliacoes-header h2 {
+  font-size: 1.25rem;
+  color: #222;
+  flex: 1;
+}
+
+.avaliacoes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.avaliacao-item {
+  background: #f9f9f9;
+  padding: 1.25rem;
+  border-radius: 10px;
+  border-left: 4px solid #646cff;
+}
+
+.avaliacao-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.avaliacao-header h3 {
+  font-size: 1rem;
+  color: #222;
+}
+
+.nota {
+  background-color: #e8eeff;
+  color: #646cff;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.curso {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.observacoes {
+  font-size: 0.875rem;
+  color: #555;
+  font-style: italic;
+}
+
+.reforco-highlight {
+  border-left-color: #ff9800 !important;
+  background-color: #fff8e6 !important;
+}
+
+.reforco-badge {
+  background-color: #ff9800;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.75rem;
+}
+
+.data {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-size: 1rem;
+}
+
+@media (min-width: 600px) {
+  .features-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .error-message {
   background-color: #ffebee;
   color: #c62828;
@@ -294,5 +559,394 @@ body {
   .app-logo {
     width: 64px;
     height: 64px;
+  }
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.page-header h1 {
+  font-size: 0;
+  color: transparent;
+  margin: 0;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #222;
+  margin: 0;
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+.page-header-spacer {
+  display: none;
+}
+
+/* Page Footer */
+.page-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.back-button-footer {
+  padding: 0.75rem 1.5rem;
+  background-color: #646cff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(100, 108, 255, 0.1);
+}
+
+.back-button-footer:hover {
+  background-color: #535bf2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.2);
+}
+
+.back-button-footer:active {
+  transform: translateY(0);
+}
+
+.back-button-main {
+  display: none;
+}
+
+/* Resumo Avaliacoes Grid Layout */
+.resumo-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.resumo-card {
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  box-shadow: 0 2px 8px rgba(100, 108, 255, 0.08);
+}
+
+.resumo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(100, 108, 255, 0.15);
+  border-color: #646cff;
+}
+
+.resumo-card .card-header {
+  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
+  color: white;
+  padding: 1.25rem;
+  border-bottom: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.resumo-card .card-header::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.resumo-card .card-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.resumo-card .card-content {
+  padding: 1.75rem 1.5rem;
+}
+
+.nota-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  background: #f9f9f9;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #646cff;
+}
+
+.nota-value {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #646cff;
+  line-height: 1;
+}
+
+.nota-label {
+  font-size: 0.95rem;
+  color: #888;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.avaliacao-nome {
+  font-size: 0.95rem;
+  color: #222;
+  margin: 0.75rem 0 0 0;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.professor-nome {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0.5rem 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.professor-nome::before {
+  content: '👨‍🏫';
+  font-size: 0.9rem;
+}
+
+.observacao {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 1.25rem;
+  font-style: italic;
+  border-left: 3px solid #e0e0e0;
+  padding-left: 1rem;
+  line-height: 1.5;
+}
+
+/* Resumo List Layout */
+.resumo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.resumo-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 1.75rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(100, 108, 255, 0.05);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.resumo-item:hover {
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.1);
+  border-color: #646cff;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field-value {
+  font-size: 1rem;
+  color: #222;
+  margin: 0;
+  font-weight: 500;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border-left: 3px solid #646cff;
+  padding-left: 1rem;
+}
+
+.field-value.nota-campo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #646cff;
+}
+
+.field-value.observacoes-campo {
+  line-height: 1.6;
+  min-height: 60px;
+}
+
+.field-group.reforco {
+  grid-column: 1 / -1;
+}
+
+.field-group.reforco .field-label {
+  color: #ff9800;
+  font-size: 0.9rem;
+}
+
+.field-group.reforco .field-value {
+  background: #fff8e6;
+  border-left-color: #ff9800;
+  color: #ff9800;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.reforco-label {
+  color: #ff9800 !important;
+}
+
+.reforco-value {
+  background: #fff8e6 !important;
+  border-left-color: #ff9800 !important;
+  color: #ff9800 !important;
+  font-weight: 600 !important;
+}
+
+/* Empty State */
+.empty-state-card {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #f9f9f9 0%, #fafafa 100%);
+  border-radius: 12px;
+  border: 2px dashed #e0e0e0;
+  margin-top: 2rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.6;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.empty-state-card p {
+  color: #999;
+  font-size: 1.05rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #999;
+  margin-top: 2rem;
+}
+
+.loading-state p {
+  font-size: 1.05rem;
+  margin: 0;
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (min-width: 600px) {
+  .resumo-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .page-header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+  }
+
+  .page-title {
+    font-size: 2rem;
+  }
+
+  .resumo-card .card-header {
+    padding: 1.5rem;
+  }
+
+  .resumo-card .card-content {
+    padding: 2rem;
+  }
+
+  .empty-state-card {
+    padding: 5rem 2rem;
+  }
+
+  .loading-state {
+    padding: 5rem 1rem;
+  }
+
+  .page-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+  }
+
+  .resumo-item {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .field-group.reforco {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 900px) {
+  .resumo-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .page-title {
+    font-size: 2.2rem;
+  }
+
+  .nota-value {
+    font-size: 3.5rem;
   }
 }
