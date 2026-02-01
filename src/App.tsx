@@ -57,6 +57,7 @@ function App() {
   const [loadingAlunosReforco, setLoadingAlunosReforco] = useState(false);
   const [errorAlunosReforco, setErrorAlunosReforco] = useState('');
   const [pesquisaAlunosReforco, setPesquisaAlunosReforco] = useState('');
+  const [pesquisaAvaliacoesAluno, setPesquisaAvaliacoesAluno] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const reforcoDropdownRef = useRef<HTMLDivElement>(null);
   const cursoDropdownRef = useRef<HTMLDivElement>(null);
@@ -146,6 +147,7 @@ function App() {
       }
       
       setAvaliacoes(avaliacoesArray);
+      setPesquisaAvaliacoesAluno('');
       setCurrentPage(tipo === 'reforco' ? 'avaliacoes-reforco' : 'todas-avaliacoes');
     } catch (err) {
       setError('Erro ao buscar avaliações');
@@ -153,6 +155,10 @@ function App() {
     } finally {
       setLoadingAvaliacoes(false);
     }
+  };
+
+  const filtrarAvaliacoesAluno = (termo: string) => {
+    setPesquisaAvaliacoesAluno(termo);
   };
 
   useEffect(() => {
@@ -1410,21 +1416,45 @@ function App() {
               /* Todas as Avaliações Page */
               <div className="avaliacoes-container">
                 <div className="page-header">
-                  <h1 className="page-title">Todas as Avaliações</h1>
+                  <div>
+                    <h1 className="page-title">📋 Todas as Avaliações</h1>
+                    <p className="page-subtitle">Acompanhe todas as suas avaliações</p>
+                  </div>
                 </div>
+
+                {!loadingAvaliacoes && (
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar avaliação ou curso..."
+                      value={pesquisaAvaliacoesAluno}
+                      onChange={(e) => filtrarAvaliacoesAluno(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                )}
 
                 {loadingAvaliacoes ? (
                   <div className="loading-state">
+                    <div className="spinner"></div>
                     <p>Carregando suas avaliações...</p>
                   </div>
                 ) : avaliacoes.length === 0 ? (
                   <div className="empty-state-card">
                     <div className="empty-icon">📭</div>
-                    <p>Nenhuma avaliação encontrada</p>
+                    <h3>Nenhuma avaliação encontrada</h3>
+                    <p>Você ainda não possui avaliações</p>
                   </div>
                 ) : (
-                  <div className="avaliacoes-list">
+                  <div className="cursos-grid">
                     {avaliacoes
+                      .filter((avaliacao: any) => {
+                        const searchTerm = pesquisaAvaliacoesAluno.toLowerCase();
+                        return (
+                          avaliacao.idAvaliacao?.nome?.toLowerCase().includes(searchTerm) ||
+                          avaliacao.idAvaliacao?.idCurso?.nome?.toLowerCase().includes(searchTerm)
+                        );
+                      })
                       .slice()
                       .sort((a: any, b: any) => {
                         const dataA = new Date(a.idAvaliacao?.dataAvaliacao).getTime();
@@ -1432,24 +1462,34 @@ function App() {
                         return dataB - dataA;
                       })
                       .map((avaliacao: any, idx: number) => (
-                      <div key={idx} className="avaliacao-item">
-                        <div className="avaliacao-header">
-                          <div>
-                            <h3>{avaliacao.idAvaliacao?.nome || 'Avaliação'}</h3>
+                        <div key={idx} className="curso-card">
+                          <div className="curso-content">
+                            <h3 className="curso-title">{avaliacao.idAvaliacao?.nome || 'Avaliação'}</h3>
+                            {avaliacao.idAvaliacao?.idCurso && (
+                              <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                                📚 {avaliacao.idAvaliacao.idCurso.nome}
+                              </p>
+                            )}
                             {avaliacao.idAvaliacao?.dataAvaliacao && (
-                              <p className="data">{new Date(avaliacao.idAvaliacao.dataAvaliacao).toLocaleDateString('pt-BR')}</p>
+                              <p style={{ fontSize: '0.85rem', color: '#999', marginTop: '0.5rem' }}>
+                                📅 {new Date(avaliacao.idAvaliacao.dataAvaliacao).toLocaleDateString('pt-BR')}
+                              </p>
                             )}
                           </div>
-                          <span className="nota">{avaliacao.nota || 0}/10</span>
+
+                          {avaliacao.observacoes && (
+                            <p style={{ fontSize: '0.85rem', color: '#555', fontStyle: 'italic', marginTop: '0.75rem' }}>
+                              💬 {avaliacao.observacoes}
+                            </p>
+                          )}
+
+                          <div className="curso-footer">
+                            <span style={{ background: '#e8eeff', color: '#646cff', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: '600', fontSize: '0.9rem' }}>
+                              {avaliacao.nota || 0}/10
+                            </span>
+                          </div>
                         </div>
-                        {avaliacao.idAvaliacao?.idCurso && (
-                          <p className="curso">Curso: {avaliacao.idAvaliacao.idCurso.nome}</p>
-                        )}
-                        {avaliacao.observacoes && (
-                          <p className="observacoes">{avaliacao.observacoes}</p>
-                        )}
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 )}
               </div>
