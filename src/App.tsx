@@ -329,6 +329,11 @@ function App() {
       return;
     }
 
+    if (!formCurso.idCursoReforco) {
+      setError('Curso de reforço é obrigatório');
+      return;
+    }
+
     if (formCurso.descricao.length > 500) {
       setError('Descrição não pode exceder 500 caracteres');
       return;
@@ -343,7 +348,7 @@ function App() {
         nome: formCurso.nome,
         descricao: formCurso.descricao,
         idProfessor: usuario.id,
-        ...(formCurso.idCursoReforco ? { idCursoReforco: formCurso.idCursoReforco } : { idCursoReforco: null })
+        idCursoReforco: formCurso.idCursoReforco
       };
 
       const response = await fetch(endpoint, {
