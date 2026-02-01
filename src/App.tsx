@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './App.css';
+import schoolSvg from './assets/school.svg';
 
 type Page = 'login' | 'cadastro-aluno' | 'cadastro-professor' | 'dashboard-aluno' | 'dashboard-professor' | 'avaliacoes-reforco' | 'todas-avaliacoes' | 'professor-cursos' | 'professor-avaliacoes' | 'professor-alunos-avaliacoes' | 'professor-alunos' | 'professor-professores' | 'professor-alunos-reforco';
 
@@ -1080,7 +1081,7 @@ function App() {
         /* Login Page */
         <>
           <div className="app-header">
-            <img src="/src/assets/school.svg" alt="APTO" className="app-logo" />
+            <img src={schoolSvg} alt="APTO" className="app-logo" />
             <h1 className="app-title">APTO</h1>
           </div>
 
@@ -1170,7 +1171,7 @@ function App() {
           <div className="login-container">
             <div className="login-card">
               <div className="login-header">
-                <img src="/src/assets/school.svg" alt="APTO" className="login-logo" />
+                <img src={schoolSvg} alt="APTO" className="login-logo" />
                 <h1 className="app-title">APTO</h1>
               </div>
 
@@ -1249,7 +1250,7 @@ function App() {
           <div className="login-container">
             <div className="login-card">
               <div className="login-header">
-                <img src="/src/assets/school.svg" alt="APTO" className="login-logo" />
+                <img src={schoolSvg} alt="APTO" className="login-logo" />
                 <h1 className="app-title">APTO</h1>
               </div>
 
@@ -1327,7 +1328,7 @@ function App() {
         <>
           <header className="dashboard-header-top">
             <div className="header-left">
-              <img src="/src/assets/school.svg" alt="APTO" className="header-logo" />
+              <img src={schoolSvg} alt="APTO" className="header-logo" />
               <span className="header-title">
                 {currentPage === 'dashboard-aluno' && 'HOME'}
                 {currentPage === 'dashboard-professor' && 'HOME'}
