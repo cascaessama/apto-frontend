@@ -1,73 +1,86 @@
-# React + TypeScript + Vite
+# 🏠 Apto Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![Backend: apto-api](https://img.shields.io/badge/backend-apto--api-blue)](https://github.com/cascaessama/apto-api)
+[![Stack](https://img.shields.io/badge/stack-React%20%7C%20TypeScript%20%7C%20Vite-6366f1)](#)
 
-Currently, two official plugins are available:
+Interface web do projeto Apto, construída com React + TypeScript + Vite.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✅ Requisitos
 
-## React Compiler
+- Node.js 20+
+- Backend obrigatório: [apto-api](https://github.com/cascaessama/apto-api)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Este frontend depende do backend para autenticação, cadastro, listagem de apartamentos e demais funcionalidades. Inicie o backend antes de executar o frontend.
 
-## Expanding the ESLint configuration
+## 🚀 Como rodar
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Instale dependências
+2. Execute em modo desenvolvimento
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 📦 Instalação de dependências
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Na raiz do projeto, instale as dependências com uma das opções abaixo:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Recomendado (instalação limpa): `npm ci`
+- Alternativa: `npm install`
+
+Após instalar, siga com `npm run dev` para iniciar o frontend.
+
+### 🧪 Comandos principais
+
+- `npm ci`
+- `npm run dev`
+- `npm run build`
+- `npm run preview`
+
+## 🐳 Docker (imagem)
+
+Este projeto já inclui um `Dockerfile` e `nginx.conf` para gerar uma imagem pronta para produção.
+
+### 🔧 Build da imagem
+
+Na raiz do projeto:
+
+```
+docker build -t apto-frontend:latest .
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### ▶️ Executar a imagem
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+O Nginx expõe a aplicação na porta 80 do container. Mapeie para a porta local desejada:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+docker run --rm -p 5173:80 apto-frontend:latest
+```
+
+Acesse: http://localhost:5173
+
+### 🔌 Integração com o backend
+
+O proxy do Nginx está configurado para encaminhar chamadas para `/api/` em:
+
+```
+http://host.docker.internal:3010
+```
+
+Certifique-se de que o backend esteja rodando nessa porta no host antes de iniciar o container.
+
+## 🧭 Estrutura do projeto
+
+Principais pastas e arquivos:
+
+- `src/`: código-fonte do frontend
+	- `App.tsx`: componente raiz da aplicação
+	- `main.tsx`: ponto de entrada
+	- `assets/`: imagens e recursos estáticos
+- `public/`: arquivos públicos servidos pelo Vite
+- `index.html`: template base da aplicação
+- `vite.config.ts`: configuração do Vite
+- `tsconfig*.json`: configurações do TypeScript
+- `nginx.conf` e `Dockerfile`: empacotamento e deploy com Nginx/Docker
+
+## 🔌 Backend
+
+Repositório do backend: [https://github.com/cascaessama/apto-api](https://github.com/cascaessama/apto-api)
+
+Consulte a documentação do backend para instalação, configuração e execução.
