@@ -10,7 +10,9 @@ Interface web do projeto Apto, construída com React + TypeScript + Vite.
 - Node.js 20+
 - Backend obrigatório: [apto-api](https://github.com/cascaessama/apto-api)
 
-Este frontend depende do backend para autenticação, cadastro, listagem de apartamentos e demais funcionalidades. Inicie o backend antes de executar o frontend.
+Este frontend depende do backend para autenticação, cadastro e demais funcionalidades. Inicie o backend antes de executar o frontend.
+
+![Fluxo](docs/fluxo.png)
 
 ## 🚀 Como rodar
 
