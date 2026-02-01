@@ -259,6 +259,7 @@ function App() {
   useEffect(() => {
     if (currentPage === 'professor-avaliacoes' && usuario && token) {
       fetchAvaliacoesProfessor();
+      fetchCursos();
     }
   }, [currentPage, usuario, token]);
 
