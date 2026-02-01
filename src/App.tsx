@@ -67,6 +67,7 @@ function App() {
     e.preventDefault();
     if (!nome || !senha) {
       setError('Preencha todos os campos');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setError('');
@@ -81,6 +82,7 @@ function App() {
       const data = await response.json();
       if (!response.ok) {
         setError(data.erro || 'Erro ao autenticar');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         setToken(data.token);
         setUsuario(data.usuario);
@@ -89,6 +91,7 @@ function App() {
       }
     } catch (err) {
       setError('Erro de conexão com o servidor');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -111,16 +114,12 @@ function App() {
         ? `/api/alunos/${usuario.id}/resumo-avaliacoes`
         : `/api/avaliacoes-alunos/aluno/${usuario.id}`;
       
-      console.log('Fetching:', endpoint);
       const response = await fetch(endpoint, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      console.log('Response status:', response.status);
-      
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Erro da API:', errorData);
         
         // Se for 404 (nenhuma avaliação), mostrar lista vazia
         if (response.status === 404) {
@@ -130,11 +129,11 @@ function App() {
         }
         
         setError(errorData.erro || 'Erro ao buscar avaliações');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       
       const data = await response.json();
-      console.log('Data received:', data);
       
       // Extrair o array correto da resposta
       let avaliacoesArray = [];
@@ -149,8 +148,8 @@ function App() {
       setAvaliacoes(avaliacoesArray);
       setCurrentPage(tipo === 'reforco' ? 'avaliacoes-reforco' : 'todas-avaliacoes');
     } catch (err) {
-      console.error('Erro ao buscar avaliações:', err);
       setError('Erro ao buscar avaliações');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoadingAvaliacoes(false);
     }
@@ -178,16 +177,19 @@ function App() {
     
     if (!nome || !senha) {
       setError('Preencha todos os campos');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (senha !== confirmSenha) {
       setError('As senhas não coincidem');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (senha.length < 4) {
       setError('A senha deve ter no mínimo 4 caracteres');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -206,6 +208,7 @@ function App() {
       
       if (!response.ok) {
         setError(data.erro || 'Erro ao criar cadastro');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -222,6 +225,7 @@ function App() {
       }, 2000);
     } catch (err) {
       setError('Erro de conexão com o servidor');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -308,6 +312,7 @@ function App() {
           setCursos([]);
         } else {
           setError(errorData.erro || 'Erro ao buscar cursos');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }
         return;
       }
@@ -316,6 +321,7 @@ function App() {
       setCursos(Array.isArray(data) ? data : []);
     } catch (err) {
       setError('Erro ao buscar cursos');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoadingCursos(false);
     }
@@ -326,16 +332,13 @@ function App() {
 
     if (!formCurso.nome || !formCurso.descricao) {
       setError('Nome e descrição são obrigatórios');
-      return;
-    }
-
-    if (!formCurso.idCursoReforco) {
-      setError('Curso de reforço é obrigatório');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (formCurso.descricao.length > 500) {
       setError('Descrição não pode exceder 500 caracteres');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -348,7 +351,7 @@ function App() {
         nome: formCurso.nome,
         descricao: formCurso.descricao,
         idProfessor: usuario.id,
-        idCursoReforco: formCurso.idCursoReforco
+        idCursoReforco: formCurso.idCursoReforco || null
       };
 
       const response = await fetch(endpoint, {
@@ -364,6 +367,7 @@ function App() {
 
       if (!response.ok) {
         setError(data.erro || 'Erro ao salvar curso');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -379,6 +383,7 @@ function App() {
       }, 1500);
     } catch (err) {
       setError('Erro de conexão com o servidor');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -397,6 +402,7 @@ function App() {
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.erro || 'Erro ao deletar curso');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -426,6 +432,7 @@ function App() {
           setAlunos([]);
         } else {
           setError(errorData.erro || 'Erro ao buscar alunos');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }
         return;
       }
@@ -444,11 +451,13 @@ function App() {
 
     if (!formAluno.nome || !formAluno.senha) {
       setError('Nome e senha são obrigatórios');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (formAluno.senha.length < 4) {
       setError('A senha deve ter no mínimo 4 caracteres');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -475,6 +484,7 @@ function App() {
 
       if (!response.ok) {
         setError(data.erro || 'Erro ao salvar aluno');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -508,6 +518,7 @@ function App() {
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.erro || 'Erro ao deletar aluno');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -687,6 +698,7 @@ function App() {
         }
         const errorData = await response.json();
         setError(errorData.erro || 'Erro ao pesquisar professores');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -855,7 +867,7 @@ function App() {
       const data = await response.json();
       setAvaliacoesList(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Erro ao buscar avaliações');
+      // Erro silencioso para avaliações lista
     }
   };
 
@@ -867,7 +879,7 @@ function App() {
       const data = await response.json();
       setAlunosList(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Erro ao buscar alunos');
+      // Erro silencioso para alunos lista
     }
   };
 
@@ -910,6 +922,7 @@ function App() {
 
       if (!response.ok) {
         setError(data.erro || 'Erro ao salvar nota');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -963,11 +976,13 @@ function App() {
 
     if (!formAvaliacao.nome || !formAvaliacao.descricao || !formAvaliacao.idCurso || !formAvaliacao.dataAvaliacao) {
       setError('Nome, descrição, curso e data são obrigatórios');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (formAvaliacao.descricao.length > 500) {
       setError('Descrição não pode exceder 500 caracteres');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -996,6 +1011,7 @@ function App() {
 
       if (!response.ok) {
         setError(data.erro || 'Erro ao salvar avaliação');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -1458,16 +1474,16 @@ function App() {
                     <p>Visualizar e atualizar notas</p>
                   </button>
 
-                  <button onClick={() => setCurrentPage('professor-alunos')} className="feature-card">
-                    <div className="feature-icon">🎓</div>
-                    <h3>Gerenciar Alunos</h3>
-                    <p>Criar e gerenciar alunos</p>
-                  </button>
-
                   <button onClick={() => setCurrentPage('professor-alunos-reforco')} className="feature-card">
                     <div className="feature-icon">📚</div>
                     <h3>Alunos com Reforço</h3>
                     <p>Visualizar alunos que precisam de reforço</p>
+                  </button>
+
+                  <button onClick={() => setCurrentPage('professor-alunos')} className="feature-card">
+                    <div className="feature-icon">🎓</div>
+                    <h3>Gerenciar Alunos</h3>
+                    <p>Criar e gerenciar alunos</p>
                   </button>
 
                   <button onClick={() => setCurrentPage('professor-professores')} className="feature-card">
@@ -1539,7 +1555,7 @@ function App() {
                     </div>
 
                     <div className="form-group" ref={reforcoDropdownRef}>
-                      <label htmlFor="reforco-curso">Curso de Reforço (Opcional)</label>
+                      <label htmlFor="reforco-curso">Curso de Reforço (opcional)</label>
                       <div className="custom-select">
                         <button
                           type="button"
@@ -1566,7 +1582,7 @@ function App() {
                                 setReforcoDropdownOpen(false);
                               }}
                             >
-                              Nenhum curso de reforço
+                              Nenhum (usar o próprio curso)
                             </button>
                             {cursos
                               .filter((c: any) => c._id !== editandoCurso?._id)
