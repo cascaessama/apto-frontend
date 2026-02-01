@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
-type Page = 'login' | 'cadastro-aluno' | 'cadastro-professor' | 'dashboard-aluno' | 'dashboard-professor' | 'avaliacoes-reforco' | 'todas-avaliacoes' | 'professor-cursos' | 'professor-avaliacoes' | 'professor-alunos-avaliacoes' | 'professor-alunos' | 'professor-professores';
+type Page = 'login' | 'cadastro-aluno' | 'cadastro-professor' | 'dashboard-aluno' | 'dashboard-professor' | 'avaliacoes-reforco' | 'todas-avaliacoes' | 'professor-cursos' | 'professor-avaliacoes' | 'professor-alunos-avaliacoes' | 'professor-alunos' | 'professor-professores' | 'professor-alunos-reforco';
 
 function App() {
   const [nome, setNome] = useState('');
@@ -53,6 +53,10 @@ function App() {
   const [formProfessor, setFormProfessor] = useState({ nome: '', senha: '' });
   const [editandoProfessor, setEditandoProfessor] = useState<any>(null);
   const [pesquisaProfessor, setPesquisaProfessor] = useState('');
+  const [alunosReforco, setAlunosReforco] = useState<any[]>([]);
+  const [loadingAlunosReforco, setLoadingAlunosReforco] = useState(false);
+  const [errorAlunosReforco, setErrorAlunosReforco] = useState('');
+  const [pesquisaAlunosReforco, setPesquisaAlunosReforco] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const reforcoDropdownRef = useRef<HTMLDivElement>(null);
   const cursoDropdownRef = useRef<HTMLDivElement>(null);
@@ -272,6 +276,14 @@ function App() {
   useEffect(() => {
     if (currentPage === 'professor-professores' && usuario && token) {
       fetchProfessores();
+    }
+  }, [currentPage, usuario, token]);
+
+  // Carregar alunos com reforço quando a página é aberta
+  useEffect(() => {
+    if (currentPage === 'professor-alunos-reforco' && usuario && token) {
+      setErrorAlunosReforco(''); // Limpar erro da página
+      fetchAlunosReforco();
     }
   }, [currentPage, usuario, token]);
 
@@ -679,6 +691,41 @@ function App() {
       setError('Erro ao pesquisar professores');
     } finally {
       setLoadingProfessores(false);
+    }
+  };
+
+  const fetchAlunosReforco = async () => {
+    setLoadingAlunosReforco(true);
+    setErrorAlunosReforco('');
+    try {
+      const response = await fetch('/api/professores/alunos-reforco', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        // Se for 404 (nenhum aluno com reforço), mostrar lista vazia
+        if (response.status === 404) {
+          setAlunosReforco([]);
+          setErrorAlunosReforco('');
+          return;
+        }
+        
+        try {
+          const errorData = await response.json();
+          setErrorAlunosReforco(errorData.erro || errorData.detalhes || `Erro ${response.status}`);
+        } catch (parseError) {
+          setErrorAlunosReforco(`Erro do servidor (${response.status})`);
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setAlunosReforco(Array.isArray(data) ? data : []);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorAlunosReforco('Erro na requisição: ' + msg);
+    } finally {
+      setLoadingAlunosReforco(false);
     }
   };
 
@@ -1256,6 +1303,7 @@ function App() {
                 {currentPage === 'professor-avaliacoes' && 'AVALIAÇÕES'}
                 {currentPage === 'professor-alunos-avaliacoes' && 'NOTAS DOS ALUNOS'}
                 {currentPage === 'professor-alunos' && 'ALUNOS'}
+                {currentPage === 'professor-alunos-reforco' && 'ALUNOS COM REFORÇO'}
                 {currentPage === 'professor-professores' && 'PROFESSORES'}
               </span>
             </div>
@@ -1409,6 +1457,12 @@ function App() {
                     <div className="feature-icon">🎓</div>
                     <h3>Gerenciar Alunos</h3>
                     <p>Criar e gerenciar alunos</p>
+                  </button>
+
+                  <button onClick={() => setCurrentPage('professor-alunos-reforco')} className="feature-card">
+                    <div className="feature-icon">📚</div>
+                    <h3>Alunos com Reforço</h3>
+                    <p>Visualizar alunos que precisam de reforço</p>
                   </button>
 
                   <button onClick={() => setCurrentPage('professor-professores')} className="feature-card">
@@ -2335,6 +2389,95 @@ function App() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            ) : currentPage === 'professor-alunos-reforco' ? (
+              /* Alunos com Reforço */
+              <div className="avaliacoes-container">
+                <div className="page-header">
+                  <div>
+                    <h1 className="page-title">📚 Alunos com Reforço</h1>
+                    <p className="page-subtitle">Acompanhe os alunos que precisam de reforço</p>
+                  </div>
+                </div>
+
+                {errorAlunosReforco && <div className="error-message">{errorAlunosReforco}</div>}
+
+                {!loadingAlunosReforco && alunosReforco.length > 0 && (
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar aluno ou avaliação..."
+                      value={pesquisaAlunosReforco}
+                      onChange={(e) => setPesquisaAlunosReforco(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                )}
+
+                {loadingAlunosReforco ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Carregando alunos com reforço...</p>
+                  </div>
+                ) : alunosReforco.length === 0 ? (
+                  <div className="empty-state-card">
+                    <div className="empty-icon">🎓</div>
+                    <h3>Nenhum aluno necessita de reforço</h3>
+                    <p>Todos os alunos estão com notas satisfatórias!</p>
+                  </div>
+                ) : (
+                  <div className="cursos-grid">
+                    {alunosReforco
+                      .flatMap((aluno: any) =>
+                        aluno.avaliacoes.map((aval: any) => ({
+                          id: `${aluno.idAluno._id}-${aval.idAvaliacao}`,
+                          nomeAluno: aluno.idAluno.nome,
+                          nomeAvaliacao: aval.nomeAvaliacao,
+                          nomeCurso: aval.nomeCurso,
+                          data: aval.dataAvaliacao,
+                          nota: aval.nota,
+                          cursoReforco: aval.cursoReforco
+                        }))
+                      )
+                      .filter((item: any) =>
+                        pesquisaAlunosReforco === '' ||
+                        item.nomeAluno.toLowerCase().includes(pesquisaAlunosReforco.toLowerCase()) ||
+                        item.nomeAvaliacao.toLowerCase().includes(pesquisaAlunosReforco.toLowerCase())
+                      )
+                      .map((item: any) => (
+                        <div key={item.id} className="curso-card">
+                          <div className="curso-content">
+                            <h3 className="curso-title">{item.nomeAluno}</h3>
+                            <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                              📝 {item.nomeAvaliacao}
+                            </p>
+                            <p style={{ fontSize: '0.85rem', color: '#888', marginBottom: '0.5rem' }}>
+                              📚 {item.nomeCurso}
+                            </p>
+                            <p style={{ fontSize: '0.85rem', color: '#999', marginBottom: '0.75rem' }}>
+                              📅 {new Date(item.data).toLocaleDateString('pt-BR')}
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                              <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>Nota:</span>
+                              <span style={{ fontSize: '1.25rem', fontWeight: '700', color: item.nota < 5 ? '#d32f2f' : '#ff6b6b' }}>
+                                {item.nota}/10
+                              </span>
+                            </div>
+                            {item.cursoReforco && (
+                              <div style={{ background: '#fff8e6', padding: '0.75rem', borderRadius: '6px', marginTop: '0.75rem' }}>
+                                <p style={{ fontSize: '0.75rem', fontWeight: '600', color: '#e65100', margin: '0 0 0.25rem 0' }}>
+                                  🎓 REFORÇO SUGERIDO
+                                </p>
+                                <p style={{ fontSize: '0.9rem', color: '#ff9800', margin: 0, fontWeight: '600' }}>
+                                  {item.cursoReforco.nome}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
