@@ -58,6 +58,7 @@ function App() {
   const [errorAlunosReforco, setErrorAlunosReforco] = useState('');
   const [pesquisaAlunosReforco, setPesquisaAlunosReforco] = useState('');
   const [pesquisaAvaliacoesAluno, setPesquisaAvaliacoesAluno] = useState('');
+  const [pesquisaAvaliacoesReforco, setPesquisaAvaliacoesReforco] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const reforcoDropdownRef = useRef<HTMLDivElement>(null);
   const cursoDropdownRef = useRef<HTMLDivElement>(null);
@@ -148,6 +149,7 @@ function App() {
       
       setAvaliacoes(avaliacoesArray);
       setPesquisaAvaliacoesAluno('');
+      setPesquisaAvaliacoesReforco('');
       setCurrentPage(tipo === 'reforco' ? 'avaliacoes-reforco' : 'todas-avaliacoes');
     } catch (err) {
       setError('Erro ao buscar avaliações');
@@ -159,6 +161,10 @@ function App() {
 
   const filtrarAvaliacoesAluno = (termo: string) => {
     setPesquisaAvaliacoesAluno(termo);
+  };
+
+  const filtrarAvaliacoesReforco = (termo: string) => {
+    setPesquisaAvaliacoesReforco(termo);
   };
 
   useEffect(() => {
@@ -1373,6 +1379,18 @@ function App() {
                   </div>
                 </div>
 
+                {!loadingAvaliacoes && (
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar avaliação ou curso..."
+                      value={pesquisaAvaliacoesReforco}
+                      onChange={(e) => filtrarAvaliacoesReforco(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                )}
+
                 {loadingAvaliacoes ? (
                   <div className="loading-state">
                     <p>Carregando suas avaliações...</p>
@@ -1385,6 +1403,14 @@ function App() {
                 ) : (
                   <div className="avaliacoes-list">
                     {avaliacoes
+                      .filter((avaliacao: any) => {
+                        const searchTerm = pesquisaAvaliacoesReforco.toLowerCase();
+                        return (
+                          avaliacao.nomeAvaliacao?.toLowerCase().includes(searchTerm) ||
+                          avaliacao.nomeCurso?.toLowerCase().includes(searchTerm) ||
+                          avaliacao.nomeReforco?.toLowerCase().includes(searchTerm)
+                        );
+                      })
                       .slice()
                       .sort((a: any, b: any) => {
                         const dataA = new Date(a.dataAvaliacao).getTime();
